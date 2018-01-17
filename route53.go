@@ -68,9 +68,10 @@ func ListZones() ([]*Route53Zone, error) {
 
 	cb := func(response *route53.ListHostedZonesOutput, lastPage bool) bool {
 		for _, r := range response.HostedZones {
+			id := strings.Replace(*r.Id, "/hostedzone/", "", 1)
 			zone := &Route53Zone{
 				Name:   *r.Name,
-				ZoneID: *r.Id,
+				ZoneID: id,
 			}
 			allZones = append(allZones, zone)
 		}
