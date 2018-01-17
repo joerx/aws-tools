@@ -18,6 +18,12 @@ type Route53Record struct {
 	ZoneID  string
 }
 
+// Route53Zone represents a single AWS R53 hosted zone
+type Route53Zone struct {
+	Name   string
+	ZoneID string
+}
+
 // ExportZone exports the records from a Route53 zone into a rowset so it can be exported as CSV
 func ExportZone(zoneIDs ...string) (*RowSet, error) {
 	records, err := ListZonesRecords(zoneIDs...)
@@ -53,6 +59,30 @@ func getRoute53Client() *route53.Route53 {
 		r53Client = route53.New(sess)
 	}
 	return r53Client
+}
+
+// ListZones lists all zones visible to the current IAM user
+func ListZones() ([]*Route53Zone, error) {
+	client := getRoute53Client()
+	allZones := make([]*Route53Zone, 0, 100)
+
+	cb := func(response *route53.ListHostedZonesOutput, lastPage bool) bool {
+		for _, r := range response.HostedZones {
+			zone := &Route53Zone{
+				Name:   *r.Name,
+				ZoneID: *r.Id,
+			}
+			allZones = append(allZones, zone)
+		}
+		return true
+	}
+	input := &route53.ListHostedZonesInput{} // defaults
+
+	if err := client.ListHostedZonesPages(input, cb); err != nil {
+		return nil, err
+	}
+
+	return allZones, nil
 }
 
 // ListZonesRecords returns all resource records for multiple zones

@@ -29,11 +29,18 @@ func main() {
 		},
 	}
 
+	zoneListCommand := cli.Command{
+		Name:   "list",
+		Usage:  "list all hosted zones visible to the current user",
+		Action: actionListZones,
+	}
+
 	zoneCommand := cli.Command{
 		Name:  "zone",
 		Usage: "work with Route53 zones",
 		Subcommands: []cli.Command{
 			zoneExportCommand,
+			zoneListCommand,
 		},
 	}
 
@@ -62,6 +69,21 @@ func actionExportZone(c *cli.Context) error {
 	}
 
 	return WriteToCSV(f, records)
+}
+
+func actionListZones(c *cli.Context) error {
+	zones, err := ListZones()
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("ZoneID\tName")
+	for _, zone := range zones {
+		fmt.Printf("%s\t%s\n", zone.ZoneID, zone.Name)
+	}
+
+	return nil
 }
 
 // getOutput returns the output stream to write to depending on the value of outParam. If out is
